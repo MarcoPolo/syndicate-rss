@@ -1,0 +1,12 @@
+{
+  "name": "syndicate-rss",
+  "version": "1.0.0",
+  "description": "Copy an RSS feed into a blog post md file",
+  "main": "dist/index.js",
+  "repository": "https://github.com/marcopolo/syndicate-rss",
+  "author": "marcopolo",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^4.1.3"
+  }
+}
