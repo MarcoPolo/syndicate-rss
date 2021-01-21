@@ -1,6 +1,6 @@
 import minimist from 'minimist'
 import Parser from 'rss-parser';
-import fs from 'fs/promises'
+import { promises as fs } from 'fs'
 import path from 'path'
 import { tmpdir } from 'os';
 import TOML from '@iarna/toml'
@@ -12,9 +12,10 @@ const args = minimist(process.argv.slice(2))
 
 const inputRSS: string = args.in
 const outputPath: string = args.out
+const lastN: number | null = args.lastN ? parseInt(args.lastN) : null
 
 if (args.help || !inputRSS || !outputPath) {
-  console.log(`Usage: ${process.argv0} ${process.argv[1]} --in <RSS-URL> --out <local-folder>`)
+  console.log(`Usage: ${process.argv0} ${process.argv[1]} --in <RSS-URL> --out <local-folder> (optionally: --lastN number)`)
   process.exit(args.help ? 0 : 1)
 }
 
@@ -73,10 +74,11 @@ ${content}
 
 const parser = new Parser<{}, ExtraFields>();
 (async () => {
-
   const feed = await parser.parseURL(inputRSS);
-  // console.log("Feed is: ", new Set(feed.items.map(i => Object.keys(i))))
-  // console.log("Feed is: ", feed.items[0])
-  const mdPosts = feed.items.map(feedItemToMarkdownPost)
-  await writeMarkdownPost(outputPath, mdPosts[0])
+  let mdPosts = feed.items.map(feedItemToMarkdownPost)
+  if (!!lastN) {
+    mdPosts = mdPosts.slice(0, lastN)
+  }
+
+  await Promise.all(mdPosts.map(p => writeMarkdownPost(outputPath, p)))
 })()

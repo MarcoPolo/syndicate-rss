@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Copy an RSS feed into a blog post md file",
   "main": "dist/index.js",
+  "bin": "bin.js",
   "repository": "https://github.com/marcopolo/syndicate-rss",
   "author": "marcopolo",
   "license": "MIT",
