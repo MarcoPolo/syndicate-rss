@@ -68,11 +68,12 @@ ${TOML.stringify({
     title,
     originalLink,
     date: pubDate,
+    template: "html_content/raw.html",
     ...(!!contentSnippet ? { summary: contentSnippet } : {}),
-    extra: { author },
+    extra: { author, raw: content },
   })}
 +++
-${content}
+# DO NOT RENDER
 `
   await fs.writeFile(path.join(outDir, `${author}-${title}.md`), mdContent)
 }
