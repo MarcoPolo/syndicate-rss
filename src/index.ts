@@ -32,6 +32,10 @@ type ExtraFields = {
   author: string
 }
 
+type ExtraFeedFields = {
+  author: { name: string }
+}
+
 export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): MarkdownPost {
   const {
     title,
@@ -61,6 +65,8 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
 }
 
 async function writeMarkdownPost(outDir: string, { title, author, originalLink, contentSnippet, content, pubDate }: MarkdownPost) {
+  // Hack so that the content doesn't terminate the front matter
+  content = content.replace(/[+]{3}/g, "\\u002B\\u002B\\u002B")
 
   const mdContent = `
 +++
@@ -73,12 +79,12 @@ ${TOML.stringify({
     extra: { author, raw: content },
   })}
 +++
-# DO NOT RENDER
-`
+${content}
+`.replace(/(\\\\u002B){3}/g, "\\u002B\\u002B\\u002B") // Remove one level of escaping so these come out as "\u002B" in the toml front matter.
   await fs.writeFile(path.join(outDir, `${author}-${title}.md`), mdContent)
 }
 
-const parser = new Parser<ExtraFields, ExtraFields>({ customFields: { feed: ["author"] } });
+const parser = new Parser<ExtraFeedFields, ExtraFields>({ customFields: { feed: ["author"] } });
 (async () => {
   const feed = await parser.parseURL(inputRSS);
   let mdPosts = feed.items.map(feedItemToMarkdownPost)
@@ -87,5 +93,7 @@ const parser = new Parser<ExtraFields, ExtraFields>({ customFields: { feed: ["au
   }
 
 
-  await Promise.all(mdPosts.map(p => writeMarkdownPost(outputPath, { ...p, author: feed.author || p.author })))
+  await Promise.all(mdPosts.map(p => {
+    return writeMarkdownPost(outputPath, { ...p, author: p.author || feed.author?.name[0] })
+  }))
 })()
