@@ -39,11 +39,15 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
     author,
     content,
     link,
-    contentSnippet,
   } = item
 
-  if (!title || !link || !content || !contentSnippet || !pubDate) {
+  if (!title || !link || !content || !pubDate) {
     throw new Error("Feed item is missing required attribute")
+  }
+
+  let { contentSnippet } = item
+  if (!!contentSnippet && contentSnippet.length > 100) {
+    contentSnippet = contentSnippet.substr(0, 100) + "..."
   }
 
   return {
@@ -52,7 +56,7 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
     pubDate: new Date(pubDate),
     author,
     content,
-    contentSnippet,
+    contentSnippet: contentSnippet || "",
   }
 }
 
