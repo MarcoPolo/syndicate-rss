@@ -61,6 +61,7 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
 }
 
 async function writeMarkdownPost(outDir: string, { title, author, originalLink, contentSnippet, content, pubDate }: MarkdownPost) {
+
   const mdContent = `
 +++
 ${TOML.stringify({
@@ -76,7 +77,7 @@ ${content}
   await fs.writeFile(path.join(outDir, `${author}-${title}.md`), mdContent)
 }
 
-const parser = new Parser<{}, ExtraFields>();
+const parser = new Parser<ExtraFields, ExtraFields>({ customFields: { feed: ["author"] } });
 (async () => {
   const feed = await parser.parseURL(inputRSS);
   let mdPosts = feed.items.map(feedItemToMarkdownPost)
@@ -84,5 +85,6 @@ const parser = new Parser<{}, ExtraFields>();
     mdPosts = mdPosts.slice(0, lastN)
   }
 
-  await Promise.all(mdPosts.map(p => writeMarkdownPost(outputPath, p)))
+
+  await Promise.all(mdPosts.map(p => writeMarkdownPost(outputPath, { ...p, author: feed.author || p.author })))
 })()
