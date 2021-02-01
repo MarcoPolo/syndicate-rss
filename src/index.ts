@@ -25,7 +25,7 @@ type MarkdownPost = {
   pubDate: Date,
   author: string,
   content: string,
-  contentSnippet: string,
+  contentSnippet?: string | null,
 }
 
 type ExtraFields = {
@@ -67,7 +67,7 @@ ${TOML.stringify({
     title,
     originalLink,
     date: pubDate,
-    summary: contentSnippet,
+    ...(!!contentSnippet ? { summary: contentSnippet } : {}),
     extra: { author },
   })}
 +++
