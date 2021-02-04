@@ -72,11 +72,10 @@ async function writeMarkdownPost(outDir: string, { title, author, originalLink, 
 +++
 ${TOML.stringify({
     title,
-    originalLink,
     date: pubDate,
     template: "html_content/raw.html",
     ...(!!contentSnippet ? { summary: contentSnippet } : {}),
-    extra: { author, raw: content },
+    extra: { author, originalLink, raw: content },
   })}
 +++
 ${content}
