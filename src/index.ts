@@ -97,9 +97,19 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
   }
 }
 
-async function writeMarkdownPost(outDir: string, { title, author, originalLink, contentSnippet, content, pubDate, extraFieldValues }: MarkdownPost) {
+async function writeMarkdownPost(outDir: string, { title, author: origAuthor, originalLink, contentSnippet, content, pubDate, extraFieldValues }: MarkdownPost) {
   // Hack so that the content doesn't terminate the front matter
   content = content.replace(/[+]{3}/g, "\\u002B\\u002B\\u002B")
+
+  // Allow the extraFieldValues to overide the author, which allows us to deal
+  // with those blogs which don't send an author field.
+  const author = extraFieldValues.author ? extraFieldValues.author : origAuthor
+
+  // since author and title will get used in the filename, we strip
+  // non-alphanumeric chars from it, for those blogs which throw newlines in
+  // their title (whyyyyy)
+  const cleanAuthor = author.replace(/[^0-9a-zA-Z ]/g, '')
+  const cleanTitle = title.replace(/[^0-9a-zA-Z ]/g, '')
 
   const mdContent = `
 +++
@@ -113,7 +123,7 @@ ${TOML.stringify({
 +++
 ${content}
 `.replace(/(\\\\u002B){3}/g, "\\u002B\\u002B\\u002B") // Remove one level of escaping so these come out as "\u002B" in the toml front matter.
-  await fs.writeFile(path.join(outDir, `${author}-${title}.md`), mdContent)
+  await fs.writeFile(path.join(outDir, `${cleanAuthor}-${cleanTitle}.md`), mdContent)
 }
 
 const parser = new Parser<ExtraFeedFields, ExtraFields>({ customFields: { feed: ["author"] } });
