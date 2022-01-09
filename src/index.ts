@@ -30,6 +30,7 @@ const inputRSS: string = args.in
 const outputPath: string = args.out
 const lastN: number | null = args.lastN ? parseInt(args.lastN) : null
 const extraFieldValues: FieldValues = parseExtraFieldValues(args.extraFieldValue ? args.extraFieldValue : [])
+const noContent: boolean = !!args.noContent
 
 if (args.help || !inputRSS || !outputPath) {
   console.log(`
@@ -38,6 +39,7 @@ Usage: ${process.argv0} ${process.argv[1]} [options] --in <RSS-URL> --out <local
 Options:
   --lastN number
   --extraFieldValue "field=value"
+  --noContent
 `)
   process.exit(args.help ? 0 : 1)
 }
@@ -61,6 +63,9 @@ type ExtraFeedFields = {
 }
 
 export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): MarkdownPost {
+
+  item.content = (!noContent && item.content) ? item.content : ""
+
   const {
     title,
     pubDate,
@@ -69,12 +74,15 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
     link,
   } = item
 
-  if (!title || !link || !content || !pubDate) {
+  if (!title || !link || !pubDate) {
     throw new Error("Feed item is missing required attribute")
   }
 
   let { contentSnippet } = item
-  if (!!contentSnippet && contentSnippet.length > 100) {
+
+  if (noContent) {
+    contentSnippet = "";
+  } else if (!!contentSnippet && contentSnippet.length > 100) {
     contentSnippet = contentSnippet.substr(0, 100) + "..."
   }
 
