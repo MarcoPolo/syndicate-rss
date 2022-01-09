@@ -29,17 +29,19 @@ const args = minimist(process.argv.slice(2))
 const inputRSS: string = args.in
 const outputPath: string = args.out
 const lastN: number | null = args.lastN ? parseInt(args.lastN) : null
-const extraFieldValues: FieldValues = parseExtraFieldValues(args.extraFieldValue ? args.extraFieldValue : [])
+const extraFieldValues: FieldValues = parseExtraFieldValues(args.extraFieldValue || [])
 const noContent: boolean = !!args.noContent
+const authorOverwrite: string | undefined = args.author
 
 if (args.help || !inputRSS || !outputPath) {
   console.log(`
 Usage: ${process.argv0} ${process.argv[1]} [options] --in <RSS-URL> --out <local-folder>
 
 Options:
-  --lastN number
+  --lastN           number
   --extraFieldValue "field=value"
   --noContent
+  --author          "string"
 `)
   process.exit(args.help ? 0 : 1)
 }
@@ -90,20 +92,16 @@ export function feedItemToMarkdownPost(item: Parser.Item & ExtraFields): Markdow
     title,
     originalLink: link,
     pubDate: new Date(pubDate),
-    author,
+    author: authorOverwrite || author,
     content,
     contentSnippet: contentSnippet || "",
     extraFieldValues,
   }
 }
 
-async function writeMarkdownPost(outDir: string, { title, author: origAuthor, originalLink, contentSnippet, content, pubDate, extraFieldValues }: MarkdownPost) {
+async function writeMarkdownPost(outDir: string, { title, author, originalLink, contentSnippet, content, pubDate, extraFieldValues }: MarkdownPost) {
   // Hack so that the content doesn't terminate the front matter
   content = content.replace(/[+]{3}/g, "\\u002B\\u002B\\u002B")
-
-  // Allow the extraFieldValues to overide the author, which allows us to deal
-  // with those blogs which don't send an author field.
-  const author = extraFieldValues.author ? extraFieldValues.author : origAuthor
 
   // since author and title will get used in the filename, we strip
   // non-alphanumeric chars from it, for those blogs which throw newlines in
@@ -118,7 +116,7 @@ ${TOML.stringify({
     date: pubDate,
     template: "html_content/raw.html",
     ...(!!contentSnippet ? { summary: contentSnippet } : {}),
-    extra: { author, originalLink, raw: content, ...extraFieldValues },
+    extra: { ...extraFieldValues, author, originalLink, raw: content },
   })}
 +++
 ${content}
